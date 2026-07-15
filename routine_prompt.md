@@ -147,10 +147,12 @@ Build the digest as clean simple HTML with inline styles and save it to
    - A muted meta line: journal name &middot; star rating (&#9733;&#9733;&#9733;&#9733; for
      score 4, &#9733;&#9733;&#9733;&#9734; for score 3) &middot; topic labels
    - The 1-2 sentence relevance summary as a short paragraph
-   - If the link is a DOI or arXiv URL, a small muted line 'DOI: ...' or
-     'arXiv: ...' with the identifier copied verbatim from the link; if
-     the Zotero step found an open-access PDF for this paper, append
-     ' · PDF' to that line as a link to the PDF URL
+   - A row of small pill-style links (inline-block, rounded corners,
+     padding around 4px 12px, white text, font-size around 12px):
+     'Paper' on a coral background (#e8734a) linking to the paper URL,
+     and 'PDF' on a navy background (#2b3a55) linking to the open-access
+     PDF when the Zotero step found one. Beside the pills, the bare DOI
+     or arXiv id in small muted text when the link contains one.
 3. Only add a footer if something failed (a fetch source, a Zotero add,
    the git push, anything): name the step and quote the exact error in
    muted text. If everything succeeded, end after the last card.
@@ -160,7 +162,7 @@ Then write and run _send.py:
 ```python
 import requests, os
 html = open('/tmp/digest.html').read()
-SUBJECT = '[Literature Monitor] TODAY — N relevant papers'  # fill in real date and N (or '— 0 new papers' / '— run failed')
+SUBJECT = 'Morning <YOUR_NAME>! N papers in today\'s round'  # N>0. For zero: 'Morning <YOUR_NAME>! Nothing new in today\'s round'. On failure: 'Morning <YOUR_NAME>! The paper round hit a snag'
 r = requests.post('https://api.resend.com/emails',
     headers={'Authorization': f"Bearer {os.environ['RESEND_API_KEY']}", 'Content-Type': 'application/json'},
     json={'from': 'Literature Monitor <YOUR_FROM_ADDRESS>',
