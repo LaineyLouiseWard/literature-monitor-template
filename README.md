@@ -48,7 +48,8 @@ research_scope.md, relevance_rules.md, config.yaml, .env.example.
      a thesis chapter, proposal, or paper in this folder for you to
      read, or both. Also ask for a Zotero library export dropped in
      this folder (File > Export Library > CSV) if I use Zotero, and
-     which research groups or authors I always read.
+     which research groups or authors I always read (suggest candidates
+     from the most frequent authors in my Zotero export).
    - My email address, and my Zotero library ID and collection if I
      want papers filed automatically.
 2. Draft research_scope.md and relevance_rules.md from what I gave you,
