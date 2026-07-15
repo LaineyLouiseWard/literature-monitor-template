@@ -65,6 +65,14 @@ CROSSREF_FALLBACKS = {
     # "Weather and Forecasting": "1520-0434",
 }
 
+# Journals with no workable RSS at all (Elsevier, Nature Portfolio, ...) can
+# be monitored via the free OpenAlex API instead: no key needed, but add
+# api.openalex.org to the cloud allowlist. Maps display name to ISSN.
+OPENALEX_SOURCES = {
+    # "Journal of Hydrology": "0022-1694",
+}
+OPENALEX_DAYS = 14  # publication-date look-back window per run
+
 MODEL = "claude-haiku-4-5-20251001"  # cheapest tier; screening is a bounded task
 MAX_BATCH = 50  # max papers per API call
 CROSSREF_ROWS = 30  # max papers to fetch per Crossref query
@@ -243,6 +251,52 @@ def fetch_arxiv_keyword_search() -> list[dict]:
     return papers
 
 
+def fetch_openalex(name: str, issn: str) -> list[dict]:
+    """Fetch recent works for a journal ISSN via the OpenAlex API.
+
+    Covers journals whose RSS feeds are broken or blocked entirely.
+    Anonymous access is heavily rate-limited; set OPENALEX_API_KEY in the
+    environment (free key from openalex.org) for reliable daily use.
+    """
+    import os
+
+    since = (date.today() - timedelta(days=OPENALEX_DAYS)).isoformat()
+    url = (
+        "https://api.openalex.org/works"
+        f"?filter=primary_location.source.issn:{issn},from_publication_date:{since}"
+        f"&per-page=50&mailto={CONTACT_EMAIL}"
+    )
+    headers = {"Accept": "application/json"}
+    api_key = os.environ.get("OPENALEX_API_KEY")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    resp = requests.get(url, headers=headers, timeout=30)
+    resp.raise_for_status()
+
+    papers = []
+    for item in resp.json().get("results", []):
+        title = (item.get("title") or "").strip()
+        if not title:
+            continue
+        # OpenAlex stores abstracts as an inverted index; rebuild the text
+        abstract = ""
+        inv = item.get("abstract_inverted_index")
+        if inv:
+            pos = {}
+            for word, idxs in inv.items():
+                for i in idxs:
+                    pos[i] = word
+            abstract = " ".join(pos[i] for i in sorted(pos))
+        link = item.get("doi") or item.get("id", "")
+        papers.append({
+            "title": title,
+            "abstract": abstract,
+            "link": link,
+            "source": name,
+        })
+    return papers
+
+
 def fetch_all(feeds: list[dict]) -> list[dict]:
     """Fetch papers from all feeds. Falls back to Crossref for blocked feeds."""
     all_papers = []
@@ -270,6 +324,15 @@ def fetch_all(feeds: list[dict]) -> list[dict]:
         except Exception as e:
             print(f"  {name}: FAILED ({e})")
 
+    # OpenAlex sources — journals with no workable RSS
+    for name, issn in OPENALEX_SOURCES.items():
+        try:
+            papers = fetch_openalex(name, issn)
+            print(f"  {name}: {len(papers)} entries (via OpenAlex)")
+            all_papers.extend(papers)
+        except Exception as e:
+            print(f"  {name}: FAILED ({e})")
+
     # arXiv keyword search — catches papers across all categories
     if ARXIV_SEARCH_TERMS:
         try:
@@ -290,6 +353,21 @@ def normalise_title(title: str) -> str:
     return re.sub(r"[^a-z0-9 ]", "", title.lower()).strip()
 
 
+def extract_paper_id(link: str) -> str | None:
+    """Return a stable id line ('doi:...' or 'arxiv:...') for a paper link.
+
+    Title-only dedup double-alerts when a preprint is later published with a
+    slightly different title; the DOI or arXiv id catches that.
+    """
+    m = re.match(r"https?://(?:dx\.)?doi\.org/(10\.\S+)", link or "")
+    if m:
+        return f"doi:{m.group(1).lower()}"
+    m = re.search(r"arxiv\.org/abs/(\d{4}\.\d{4,5})", link or "")
+    if m:
+        return f"arxiv:{m.group(1)}"
+    return None
+
+
 def load_seen(path: Path) -> set[str]:
     """Load set of normalised titles already seen."""
     if not path.exists():
@@ -297,25 +375,37 @@ def load_seen(path: Path) -> set[str]:
     return {line.strip() for line in path.read_text().splitlines() if line.strip()}
 
 
-def save_seen(path: Path, titles: list[str]) -> None:
-    """Append newly seen titles to the file."""
+def mark_seen(papers: list[dict], path: Path = None) -> int:
+    """Append each paper's normalised title (and id line, when the link has
+    a DOI or arXiv id) to the seen file. Returns the number of lines added."""
+    path = path or SEEN_PAPERS
+    lines = []
+    for p in papers:
+        lines.append(normalise_title(p["title"]))
+        pid = extract_paper_id(p.get("link", ""))
+        if pid:
+            lines.append(pid)
     with open(path, "a") as f:
-        for t in titles:
-            f.write(t + "\n")
+        for line in lines:
+            f.write(line + "\n")
+    return len(lines)
 
 
 def deduplicate(papers: list[dict], seen: set[str]) -> list[dict]:
-    """Remove papers whose normalised title is already in the seen set.
+    """Remove papers already seen, by normalised title or DOI/arXiv id.
 
     Also deduplicates within the current batch (same paper from multiple feeds).
     """
     new = []
     seen_this_run = set()
     for p in papers:
-        norm = normalise_title(p["title"])
-        if norm in seen or norm in seen_this_run:
+        keys = {normalise_title(p["title"])}
+        pid = extract_paper_id(p.get("link", ""))
+        if pid:
+            keys.add(pid)
+        if keys & (seen | seen_this_run):
             continue
-        seen_this_run.add(norm)
+        seen_this_run |= keys
         new.append(p)
     return new
 
@@ -510,6 +600,15 @@ def add_to_zotero(papers: list[dict]) -> int:
     headers = {"Zotero-API-Key": api_key, "Content-Type": "application/json"}
     added = 0
 
+    def already_in_library(doi: str) -> bool:
+        r = requests.get(
+            f"{zotero_api_base()}/items",
+            headers=headers,
+            params={"q": doi, "qmode": "everything", "limit": 1},
+            timeout=15,
+        )
+        return r.ok and bool(r.json())
+
     for p in papers:
         if p.get("score", 0) < 3:
             continue
@@ -518,6 +617,10 @@ def add_to_zotero(papers: list[dict]) -> int:
         title = p["title"]
         link = p.get("link", "")
         doi = extract_doi(link)
+
+        if doi and already_in_library(doi):
+            print(f"  = already in Zotero, skipping: {title[:60]}...")
+            continue
 
         try:
             item = {
@@ -640,9 +743,8 @@ def main():
         print("Skipping Zotero upload (--no-zotero)")
 
     # Mark all papers as seen (both accepted and rejected)
-    new_titles = [normalise_title(p["title"]) for p in new_papers]
-    save_seen(SEEN_PAPERS, new_titles)
-    print(f"Added {len(new_titles)} titles to seen_papers.txt")
+    n_lines = mark_seen(new_papers)
+    print(f"Added {n_lines} lines to seen_papers.txt")
 
     print("\nDone.")
 

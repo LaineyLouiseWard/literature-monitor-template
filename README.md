@@ -104,7 +104,7 @@ you a silently dead (or worse, silently lying) monitor:
    environment's settings → Network access → **Custom**, keep the default
    package-manager list, and add your feed domains plus `api.crossref.org`,
    `api.unpaywall.org`, `api.zotero.org`, `api.resend.com`,
-   `export.arxiv.org`, `arxiv.org`, and `doi.org`.
+   `api.openalex.org`, `export.arxiv.org`, `arxiv.org`, and `doi.org`.
 3. **Email via Resend.** Create a free resend.com account and an API key.
    Without a verified domain, send from `onboarding@resend.dev`, which
    delivers only to your own Resend account email, so register with the
@@ -170,6 +170,9 @@ DOI from your digest now and then.
   repo.
 - `ANTHROPIC_API_KEY` is only needed for local runs; the cloud routine
   screens natively.
+- `OPENALEX_API_KEY` (free, from openalex.org) is only needed if you add
+  journals to `OPENALEX_SOURCES` — anonymous OpenAlex access is heavily
+  rate-limited.
 
 ## Licence
 

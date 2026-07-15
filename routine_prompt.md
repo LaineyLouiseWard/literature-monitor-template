@@ -46,6 +46,8 @@ Run:
 pip install feedparser requests --quiet
 export ZOTERO_API_KEY=<YOUR_ZOTERO_API_KEY>
 export RESEND_API_KEY=<YOUR_RESEND_API_KEY>
+# Only if you use OPENALEX_SOURCES in screen.py:
+# export OPENALEX_API_KEY=<YOUR_OPENALEX_API_KEY>
 ```
 
 (If your cloud environment supports environment variables, set the keys
@@ -112,9 +114,15 @@ Append each relevant paper to paper_log.csv (create with header row if the
 file doesn't exist):
   date,title,source,link,relevance_score,relevance_summary,topic_labels
 
-Append ALL screened paper titles (both relevant and irrelevant) to
-seen_papers.txt — one normalised title per line (lowercase, strip
-non-alphanumeric except spaces).
+Mark ALL screened papers (both relevant and irrelevant) as seen by running:
+
+```python
+import sys, json
+sys.path.insert(0, '.')
+import screen
+new = json.load(open('/tmp/new_papers.json'))
+print(screen.mark_seen(new), 'lines added to seen_papers.txt')
+```
 
 ## 6. Commit and push
 

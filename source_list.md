@@ -43,7 +43,7 @@ that screening stays cheap and the digest stays readable.
 | IOP | `https://iopscience.iop.org/journal/rss/{ISSN}` | Works directly |
 | arXiv | `https://export.arxiv.org/rss/{category}` | Works directly |
 | AMS | RSS is blocked by CloudFront bot protection | Add the journal to `CROSSREF_FALLBACKS` in `screen.py` instead (name substring → ISSN); articles then come from the free Crossref API |
-| Elsevier | RSS unreliable from scripts | Prefer a Copernicus/Wiley journal covering the same niche, or a Crossref fallback |
+| Elsevier, Nature Portfolio, or any journal with no workable RSS | RSS broken, redirecting, or absent | Add the ISSN to `OPENALEX_SOURCES` in `screen.py`; articles then come from the free OpenAlex API (no key needed) |
 
 Verify a candidate feed with `python screen.py --dry-run` before keeping it.
 
