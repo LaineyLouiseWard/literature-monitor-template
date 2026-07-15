@@ -1,11 +1,16 @@
 # Literature Monitor Template
 
-A daily AI literature monitor. A scheduled Claude agent screens the RSS
-feeds of your chosen journals against your written research scope, emails
-you a digest of relevant papers, files them into your Zotero library with
-full metadata and open-access PDF links, and commits an auditable log to
-this repo. You read one short email a day instead of eleven tables of
-contents.
+A daily AI literature monitor for researchers and PhD students. A
+scheduled Claude agent screens the RSS feeds of your chosen journals
+against your written research scope, emails you a digest of relevant
+papers, files them into your Zotero library with full metadata and
+open-access PDF links, and commits an auditable log to this repo. You
+read one short email a day instead of eleven tables of contents.
+
+Unlike arXiv-centric recommenders, it watches the peer-reviewed journals
+of your field across publishers, needs no server, GitHub Actions setup, or
+LLM API key — a claude.ai subscription is the engine — and every paper in
+the digest is traceable to a feed the code actually fetched.
 
 ![Example daily digest](assets/digest-example.png)
 
@@ -73,11 +78,21 @@ Everything the model claims must be traceable to what the code fetched
 ### Writing your scope and rules
 
 The fastest way to draft `research_scope.md` and `relevance_rules.md` is to
-not write them from scratch. Open your copy of the repo in Claude Code,
-paste in your thesis or project abstract along with five to ten papers you
-consider core reading, and ask it to draft both files in the format the
-scaffolds define. Correct what it gets wrong; you know your scope better
-than any summary of it.
+not write them from scratch. Open your copy of the repo in Claude Code and
+give it your research taste in whichever form you have it:
+
+- **Paste your abstract** from a thesis, proposal, or recent paper, plus
+  five to ten papers you consider core reading, and ask it to draft both
+  files in the format the scaffolds define.
+- **Or let it read your Zotero library.** Export it (File → Export
+  Library → CSV) into the repo folder and ask Claude Code to infer your
+  scope, strands, and exclusions from what you actually collect and read.
+  This borrows the good idea behind embedding-based recommenders, but the
+  result is written rules you can inspect and edit, not an opaque
+  similarity score.
+
+Either way, correct what it gets wrong; you know your scope better than
+any summary of it.
 
 Then treat the first two weeks of digests as calibration. Every false
 positive becomes a new exclusion rule, and every paper you spot elsewhere
