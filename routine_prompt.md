@@ -10,6 +10,15 @@ agent whose data pipeline fails will otherwise invent plausible-looking
 papers — fabricated titles, DOIs, and journals — rather than report the
 failure. The rules make failures loud and honest instead.
 
+**Email delivery caveat:** Google's Gmail connector currently exposes no
+send tool — it can only create drafts, which sit unnoticed in your Drafts
+folder. For a digest that actually arrives, replace step 7's Gmail
+instructions with a transactional email API (e.g. Resend: POST
+https://api.resend.com/emails with an API key; free tier is ample for one
+email a day, and a verified domain gives clean deliverability). Add the
+API's domain to your environment's network allowlist. Keep the Gmail draft
+as a fallback if you like.
+
 ---
 
 ```
