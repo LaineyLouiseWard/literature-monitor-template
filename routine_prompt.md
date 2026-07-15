@@ -153,7 +153,9 @@ Build the digest as clean simple HTML with inline styles and save it to
      and 'PDF' on a navy background (#2b3a55) linking to the open-access
      PDF when the Zotero step found one. Beside the pills, the bare DOI
      or arXiv id in small muted text when the link contains one.
-3. Only add a footer if something failed (a fetch source, a Zotero add,
+3. If more than 25 papers are relevant, include only the top 25 by score
+   and end with a muted line saying how many more are in paper_log.csv.
+4. Only add a footer if something failed (a fetch source, a Zotero add,
    the git push, anything): name the step and quote the exact error in
    muted text. If everything succeeded, end after the last card.
 

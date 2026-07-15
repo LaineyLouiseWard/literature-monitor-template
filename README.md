@@ -25,6 +25,33 @@ peer-reviewed journals of your field across publishers.
 
 ## 🚀 Quick start
 
+The fastest path: click **Use this template**, open your new repo in
+Claude Code, and paste this one prompt. Claude does the setup with you:
+
+```text
+Set up Paper Round (this repo) for me.
+1. Read README.md, source_list.md, research_scope.md, relevance_rules.md,
+   config.yaml and .env.example.
+2. Interview me: which journals I follow (build source_list.md entries
+   using the publisher patterns in that file, with Crossref or OpenAlex
+   fallbacks where RSS is blocked), my email address, and my Zotero
+   library details if I use it.
+3. Ask me to paste my thesis or proposal abstract, and to export my
+   Zotero library into this folder (File > Export Library > CSV) if I
+   have one. Draft research_scope.md and relevance_rules.md from both,
+   keeping the scaffolds' structure. Fill in config.yaml.
+4. Help me create .env from .env.example, telling me exactly where each
+   key comes from (the Keys table in README.md).
+5. Run: pip install -r requirements.txt && python screen.py --dry-run
+   and fix anything that fails.
+6. Fill the placeholders in routine_prompt.md, then walk me through the
+   cloud steps from the README (GitHub App access, network allowlist,
+   creating the routine with /schedule) one at a time, waiting for me to
+   confirm each before moving on.
+```
+
+Or do it by hand:
+
 1. Click **Use this template** to create your own repo (private is fine)
 2. Edit `source_list.md` (your journals) and `config.yaml` (your settings)
 3. Draft your scope files: see [Writing your scope and rules](#%EF%B8%8F-writing-your-scope-and-rules)
@@ -33,6 +60,8 @@ peer-reviewed journals of your field across publishers.
 6. Set up the [cloud routine](#%EF%B8%8F-schedule-the-cloud-routine) and fire a test run
 
 ## ⚙️ How it works
+
+![How Paper Round works](assets/how-it-works.png)
 
 Deterministic Python does the data work: fetching feeds (with Crossref
 and OpenAlex fallbacks for publishers that block RSS), dedup by title and
@@ -141,6 +170,32 @@ one does anyway, the fix is a click away:
 | First run finds hundreds of papers | Full feed contents hit an empty `seen_papers.txt` | Expected one-off backlog flush; daily volume after that is a handful |
 
 </details>
+
+## ❓ FAQ
+
+**What does it cost to run?** It draws on your Claude Pro/Max plan's
+included usage: a few minutes of the cheapest model per day, no separate
+bill, no per-token API charges.
+
+**Will it hallucinate papers?** That's what the integrity rules are for:
+every paper must appear verbatim in the fetched feed data, and failures
+get reported instead of papered over. Spot-check a DOI occasionally
+anyway; trust, but verify.
+
+**Does it get me past paywalls?** No. Cards link the paper's page, plus
+an open-access PDF whenever Unpaywall knows one.
+
+**Can I use it without Zotero?** Yes. Leave `ZOTERO_API_KEY` empty and
+curate from the email instead.
+
+**Can I run it without the cloud routine?** Yes: `python screen.py`
+locally with an `ANTHROPIC_API_KEY`, scheduled however you like. The
+cloud routine is just the zero-infrastructure way.
+
+## 🤝 Contributing
+
+Issues and pull requests welcome, especially working feed patterns for
+more publishers and example scope files from other fields.
 
 ## ❤️ Acknowledgements
 
