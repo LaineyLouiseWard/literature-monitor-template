@@ -25,7 +25,7 @@ model claims must be traceable to what the code fetched — see
 | Metadata | Crossref API (full bibliographic data from DOI) |
 | OA PDFs | Unpaywall API |
 | Zotero | Zotero Web API via plain HTTP (deliberately not pyzotero — it fails to build in sandboxed cloud environments) |
-| Email | Gmail connector attached to the cloud routine |
+| Email | Resend API (Google's Gmail connector cannot send email — it only creates drafts) |
 | Language | Python 3 |
 
 ## Getting started
@@ -46,6 +46,8 @@ model claims must be traceable to what the code fetched — see
    any AMS journals.
 
 ### 2. Test locally
+
+Requires Python 3.10+.
 
 ```bash
 pip install -r requirements.txt
@@ -79,18 +81,20 @@ you a silently dead (or worse, silently lying) monitor:
    blocks journal feeds and academic APIs. In claude.ai/code, open your
    environment's settings → Network access → **Custom**, keep the default
    package-manager list, and add your feed domains plus: `api.crossref.org`,
-   `api.unpaywall.org`, `api.zotero.org`, `export.arxiv.org`, `arxiv.org`,
-   `doi.org`.
-3. **Gmail connector.** Connect Gmail at claude.ai/settings/connectors and
-   approve **all** permission scopes. Note which Google account you sign in
-   with — that's where drafts land if the connector offers no direct-send
-   tool.
+   `api.unpaywall.org`, `api.zotero.org`, `api.resend.com`,
+   `export.arxiv.org`, `arxiv.org`, `doi.org`.
+3. **Email via Resend.** Create a free resend.com account and an API key.
+   Without a verified domain, send from `onboarding@resend.dev` — it
+   delivers only to your own Resend account email, so register with the
+   address you want digests at; with a verified domain, send from any
+   address on it. Don't rely on the Gmail connector for delivery — it has
+   no send tool, only drafts (attach it as a fallback if you like, approving
+   all scopes).
 4. **Create the routine.** Take `routine_prompt.md`, fill in the
    placeholders, and create the routine — either ask Claude Code
-   (`/schedule` — "run this prompt daily at 6am against my repo, with the
-   Gmail connector") or use claude.ai/code/routines. Attach the Gmail
-   connector and your repo, pick the cheapest model tier, and set the cron
-   (note: cron times are UTC).
+   (`/schedule` — "run this prompt daily at 6am against my repo") or use
+   claude.ai/code/routines. Attach your repo, pick the cheapest model tier,
+   and set the cron (note: cron times are UTC).
 5. **Fire a manual test run** and read the push notification — the prompt
    makes the agent's final message state exactly what happened
    (`Digest EMAILED …` / `saved as DRAFT …` / `Gmail FAILED: <error>`).
@@ -128,7 +132,8 @@ digest now and then.
 | Routine disabled itself, "init failed" | Claude GitHub App can't clone the (private) repo | Grant repo access: github.com → Settings → Applications → Claude → Configure |
 | Run reports network/proxy errors | Environment allowlist blocks feeds/APIs | Environment settings → Network access → Custom → add the domains from step 3.2 |
 | Gmail calls fail with "insufficient authentication scopes" or "authorization has expired" | Connector token limited or expired — note that setting tool permissions to "Always allow" is NOT re-authentication | **Disconnect** and re-**Connect** Gmail at claude.ai/settings/connectors, signing in again and approving every scope |
-| Digest never arrives | Wrong Google account on the connector, or draft-only connector | Check which account the connector uses; check its Drafts; read the run's push notification — it states the outcome |
+| Digest never arrives | Resend blocked (missing from network allowlist), unverified from-address, or wrong recipient restriction on the free tier | Read the run's push notification — it states the outcome verbatim; check `api.resend.com` is allowlisted and the from/to pairing matches your Resend tier |
+| Expecting email from the Gmail connector | Google's Gmail connector has no send tool | It can only create drafts; use Resend (or any email API) for delivery |
 | Digest lists papers that don't exist | Fetch failed and the model improvised | Keep the integrity rules block; spot-check DOIs; read the failure line in the email footer |
 | First run finds hundreds of papers | Feeds' full current contents on an empty `seen_papers.txt` | Expected one-off backlog flush; daily volume is a handful |
 
@@ -138,8 +143,9 @@ digest now and then.
   (dedup) and `paper_log.csv` (results), both committed back to the repo
   daily so the screening history is versioned and auditable.
 - `ZOTERO_API_KEY` (create at zotero.org/settings/keys, write access to
-  your target library) lives in the routine prompt or, better, in the cloud
-  environment's variables — never commit it to the repo.
+  your target library) and `RESEND_API_KEY` live in the routine prompt or,
+  better, in the cloud environment's variables — never commit them to the
+  repo.
 - `ANTHROPIC_API_KEY` is only needed for local runs; the cloud routine
   screens natively.
 

@@ -1,27 +1,27 @@
 # Cloud routine prompt
 
-This is the prompt for the scheduled cloud agent. Replace the three
-placeholders (`<YOUR_EMAIL>`, `<YOUR_ZOTERO_API_KEY>`, repo details are read
-from the code), then paste the whole thing as the routine's task. See the
-README for how to create the routine and configure the cloud environment.
+This is the prompt for the scheduled cloud agent. Replace the placeholders —
+`<YOUR_EMAIL>`, `<YOUR_ZOTERO_API_KEY>`, `<YOUR_RESEND_API_KEY>`,
+`<YOUR_FROM_ADDRESS>` — then paste the whole fenced block below as the
+routine's task. See the README for how to create the routine and configure
+the cloud environment.
 
 **Do not delete the integrity rules block.** It exists because a screening
 agent whose data pipeline fails will otherwise invent plausible-looking
 papers — fabricated titles, DOIs, and journals — rather than report the
 failure. The rules make failures loud and honest instead.
 
-**Email delivery caveat:** Google's Gmail connector currently exposes no
-send tool — it can only create drafts, which sit unnoticed in your Drafts
-folder. For a digest that actually arrives, replace step 7's Gmail
-instructions with a transactional email API (e.g. Resend: POST
-https://api.resend.com/emails with an API key; free tier is ample for one
-email a day, and a verified domain gives clean deliverability). Add the
-API's domain to your environment's network allowlist. Keep the Gmail draft
-as a fallback if you like.
+**Why Resend and not the Gmail connector:** Google's Gmail connector
+exposes no send tool — it can only create drafts, which sit unnoticed in
+your Drafts folder. Resend's free tier is ample for one email a day: without
+a verified domain use `onboarding@resend.dev` as the from-address (delivers
+only to your own Resend account email); with a verified domain use any
+address on it. If you attach a Gmail connector to the routine anyway, it
+serves as a draft fallback when Resend errors.
 
 ---
 
-```
+````
 You are running a daily literature monitor for academic research. The repo
 you are working in is the literature monitor repo.
 
@@ -41,12 +41,15 @@ you are working in is the literature monitor repo.
 ## 1. Setup
 
 Run:
-```
+
+```bash
 pip install feedparser requests --quiet
 export ZOTERO_API_KEY=<YOUR_ZOTERO_API_KEY>
+export RESEND_API_KEY=<YOUR_RESEND_API_KEY>
 ```
-(If your cloud environment supports environment variables, set
-ZOTERO_API_KEY there instead and delete the export line.)
+
+(If your cloud environment supports environment variables, set the keys
+there instead and delete the export lines.)
 
 ## 2. Fetch new papers
 
@@ -122,35 +125,46 @@ git add paper_log.csv seen_papers.txt
 git diff --staged --quiet || git commit -m "Daily screen $(date +%Y-%m-%d): <N> relevant papers"
 git push origin main
 ```
+
 (Replace <N> with actual count of relevant papers.)
 
-## 7. Email the digest via the Gmail MCP tools
+## 7. Email the digest via Resend
 
-First check which Gmail tools are actually available to you this session.
-If a tool that sends mail exists, send; if only draft creation exists,
-create a draft with the same content.
-
-To: <YOUR_EMAIL>
-Subject: [Literature Monitor] TODAY — N relevant papers   (or '— 0 new papers' / '— run failed')
-
-Body — use clean HTML if the tool supports it, otherwise tidy plain text
-with blank lines between papers. Structure, in order:
+Build the digest as clean simple HTML and save it to /tmp/digest.html.
+Structure, in order:
 1. One-line summary: 'N relevant of X screened across all feeds.'
-2. 'Top picks' heading: the score-4 papers. Then 'Also relevant': the
-   score-3 papers. Each paper is ONE compact entry: the title as a
-   hyperlink to the paper URL, then em-dash, journal name, em-dash, topic
-   labels. Put the 1-2 sentence relevance summary on the next line in
-   smaller/plain text. No tables.
-3. Footer: git push status, and any step that failed with its exact quoted
-   error (including Zotero add failures).
+2. An h3 'Top picks' with the score-4 papers, then an h3 'Also relevant'
+   with the score-3 papers. Each paper is ONE compact entry: the title as
+   an <a> hyperlink to the paper URL, then em-dash, journal name, em-dash,
+   topic labels; on the next line the 1-2 sentence relevance summary in a
+   <small> or muted style. No tables.
+3. Footer paragraph: git push status, and any step that failed with its
+   exact quoted error (including Zotero add failures).
 
-After sending or drafting, VERIFY it exists (fetch the sent message or
-draft back by id or search). Then end the session with a final message that
-states, verbatim, one of:
-- 'Digest EMAILED to <YOUR_EMAIL>: N relevant papers.'
-- 'Digest saved as DRAFT (no send tool available): N relevant papers.'
-- 'Gmail FAILED: <exact error>. Digest content is in the session transcript.'
-This final message becomes the user's push notification, so it must carry
-the true email status. If Gmail failed, also paste the full digest text
-into the final message so nothing is lost.
+Then write and run _send.py:
+
+```python
+import requests, os
+html = open('/tmp/digest.html').read()
+SUBJECT = '[Literature Monitor] TODAY — N relevant papers'  # fill in real date and N (or '— 0 new papers' / '— run failed')
+r = requests.post('https://api.resend.com/emails',
+    headers={'Authorization': f"Bearer {os.environ['RESEND_API_KEY']}", 'Content-Type': 'application/json'},
+    json={'from': 'Literature Monitor <YOUR_FROM_ADDRESS>',
+          'to': ['<YOUR_EMAIL>'],
+          'subject': SUBJECT,
+          'html': html})
+print(r.status_code, r.text)
 ```
+
+Delete _send.py afterward. A 200 response with an id means sent.
+
+If Resend returns an error and a Gmail connector is attached, fall back to
+creating a Gmail draft with the same content, and report the Resend error.
+
+End the session with a final message that states, verbatim, one of:
+- 'Digest EMAILED via Resend to <YOUR_EMAIL>: N relevant papers.'
+- 'Resend FAILED (<exact error>); digest saved as Gmail DRAFT: N relevant papers.'
+- 'Email FAILED entirely: <errors>. Digest follows:' + the full digest text.
+This final message becomes the user's push notification, so it must carry
+the true email status.
+````
