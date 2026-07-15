@@ -146,6 +146,7 @@ file you edit.
 | `research_scope.md` | Your research context, half of the screening prompt |
 | `relevance_rules.md` | The 0 to 4 scoring rules, the other half |
 | `routine_prompt.md` | The cloud routine's task prompt, with placeholders |
+| `CLAUDE.md` | Orients Claude Code sessions, so the setup prompt works first time |
 | `paper_log.csv` | Papers scoring ≥ 3 (auto-generated, committed daily) |
 | `seen_papers.txt` | Titles and DOIs already screened (auto-generated) |
 
