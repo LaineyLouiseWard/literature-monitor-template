@@ -1,5 +1,5 @@
 <div align="center">
-<img src="assets/paper-round-logo.png" alt="Paper Round logo" width="200">
+<img src="assets/clawd-delivery.png" alt="Clawd delivering the paper round" width="360">
 <h1>Paper Round</h1>
 <p>
 <a href="https://claude.com/product/claude-code"><img src="https://img.shields.io/badge/powered_by-Claude_Code-D97757?logo=claude&logoColor=white" alt="powered by Claude Code"></a>
@@ -11,22 +11,22 @@
 <p><em>Your daily paper round, except it delivers journal papers straight to your inbox.</em></p>
 </div>
 
-Every morning a scheduled Claude agent reads the feeds of the journals you
-follow, scores each new paper against your written research scope, emails
-you the relevant ones, and files them into Zotero with full metadata and
-open-access PDF links. Adapted from the workflow I built for my own PhD
-([Lainey Ward](https://github.com/LaineyLouiseWard)).
+Every morning, a scheduled Claude agent reads the feeds of the journals
+*you* follow, scores each new paper against *your* written research scope,
+**emails you the relevant ones**, and files them into **Zotero** with full
+metadata and open-access PDF links.
 
-No server, no GitHub Actions, no LLM API key: a claude.ai Pro/Max
-subscription is the engine. And unlike arXiv recommenders, it covers the
-peer-reviewed journals of your field across publishers.
+**No server. No GitHub Actions. No LLM API key.** A claude.ai Pro/Max
+subscription is the engine. Adapted from the workflow I built for my own
+PhD ([Lainey Ward](https://github.com/LaineyLouiseWard)).
 
 ![Example daily digest](assets/digest.png)
 
-## 🚀 Quick start
+## 🚀 Start here
 
-The fastest path: click **Use this template**, open your new repo in
-Claude Code, and paste this one prompt. Claude does the setup with you:
+**Fastest path (recommended):** click **[Use this template](https://github.com/LaineyLouiseWard/paper-round/generate)**,
+open your new repo in Claude Code, and paste this one prompt. *Claude
+does the setup with you, conversationally:*
 
 ```text
 Set up Paper Round (this repo) for me.
@@ -50,99 +50,98 @@ Set up Paper Round (this repo) for me.
    confirm each before moving on.
 ```
 
-Or do it by hand:
+<details>
+<summary><b>Prefer to set up by hand?</b> The same six steps, manually</summary>
 
 1. Click **Use this template** to create your own repo (private is fine)
 2. Edit `source_list.md` (your journals) and `config.yaml` (your settings)
-3. Draft your scope files: see [Writing your scope and rules](#%EF%B8%8F-writing-your-scope-and-rules)
-4. `cp .env.example .env` and fill in [the keys you use](#-keys)
+3. Draft your scope files, see [Writing your scope and rules](#%EF%B8%8F-writing-your-scope-and-rules)
+4. `cp .env.example .env` and add your keys: [resend.com](https://resend.com) (required), [zotero.org/settings/keys](https://www.zotero.org/settings/keys) and [openalex.org](https://openalex.org) (optional)
 5. `pip install -r requirements.txt && python screen.py --dry-run` (Python 3.10+)
 6. Set up the [cloud routine](#%EF%B8%8F-schedule-the-cloud-routine) and fire a test run
 
+</details>
+
 ## ⚙️ How it works
 
-![How Paper Round works](assets/how-it-works.png)
+![How Paper Round works](assets/pipeline.png)
 
-Deterministic Python does the data work: fetching feeds (with Crossref
-and OpenAlex fallbacks for publishers that block RSS), dedup by title and
-DOI, logging to a committed CSV, and filing into Zotero with Crossref
-metadata and Unpaywall PDF links. Claude does exactly one thing: judge
-each new paper against `research_scope.md` and `relevance_rules.md`.
-
-The routine prompt opens with integrity rules that pin every claimed
-paper to the fetched data. They exist because a screening agent whose
-fetch step fails will invent plausible papers rather than admit failure;
-the first live run of this pipeline produced seven fabricated papers with
-DOIs that resolved to 404 pages. Under the rules, "0 new papers" is an
-explicitly successful outcome and any failure is quoted verbatim in the
-digest. Spot-check a DOI from your digest now and then anyway.
+- **Python does the data work**: fetching feeds (with Crossref and
+  OpenAlex fallbacks for publishers that block RSS), dedup by title and
+  DOI, logging to a committed CSV, and filing into Zotero.
+- **Claude does exactly one thing**: judge each new paper against
+  `research_scope.md` and `relevance_rules.md`.
+- **Failures are loud, never invented.** The routine's integrity rules pin
+  every claimed paper to the fetched data, because a screening agent whose
+  fetch fails will otherwise *invent plausible papers* — the first live
+  run of this pipeline produced seven fabricated papers with DOIs that
+  resolved to 404 pages. Under the rules, "0 new papers" is a successful
+  outcome and any failure is quoted verbatim in the digest.
 
 ## ✍️ Writing your scope and rules
 
 `research_scope.md` and `relevance_rules.md` *are* the screening prompt.
-Don't write them from scratch. Open your copy in Claude Code, paste your
-thesis or proposal abstract, drop an export of your Zotero library beside
-it (File → Export Library → CSV), and ask it to draft both files plus
-suggested `source_list.md` entries from the journals that dominate your
-library. An abstract alone is too thin: the library shows your taste, the
-abstract shows where you're heading, and together they draft well.
-Correct what it gets wrong.
+Don't write them from scratch — give Claude Code your research taste:
 
-Treat the first two weeks of digests as calibration: every false positive
-becomes an exclusion, every paper you spot elsewhere that the monitor
-missed becomes a trigger. The exclusion list does most of the filtering
-work, so grow it freely.
+- **Paste your abstract** (thesis, proposal, or a recent paper), *and*
+- **Export your Zotero library** into the folder (File → Export Library →
+  CSV). The library shows your taste, the abstract shows where you're
+  heading; together they draft well. Claude can also suggest
+  `source_list.md` entries from the journals that dominate your library.
+
+Then treat the **first two weeks as calibration**: every false positive
+becomes an exclusion, every missed paper becomes a trigger. The exclusion
+list does most of the filtering work, so grow it freely.
 
 ## ☁️ Schedule the cloud routine
 
 Each morning a Claude Code cloud agent clones this repo, runs the
-pipeline, and emails you; a push notification states the outcome either
-way, so a failed run announces itself. Runs draw on your normal plan
-usage, a few minutes of the cheapest model per day.
+pipeline, and emails you. A push notification states the outcome either
+way, so *a failed run announces itself*. Runs draw on your normal plan
+usage — a few minutes of the cheapest model per day.
 
-Each setup step guards against a real failure mode:
+Each step below guards against a real failure mode:
 
-1. **GitHub access.** The cloud agent clones via the Claude GitHub App,
-   not your local credentials. Install it via github.com → Settings →
-   Applications → Installed GitHub Apps → Claude → Configure, and grant
-   access to this repo. Without access to a private repo, every run dies
-   at init and the routine disables itself.
-2. **Network access.** Cloud environments block unknown domains by
-   default. In claude.ai/code open your environment's settings → Network
-   access → **Custom**, keep the default package-manager list, and add
-   your feed domains plus `api.crossref.org`, `api.unpaywall.org`,
-   `api.zotero.org`, `api.resend.com`, `api.openalex.org`,
-   `export.arxiv.org`, `arxiv.org`, and `doi.org`.
+1. **Grant GitHub access.** The cloud agent clones via the Claude GitHub
+   App, not your local credentials. Configure it at
+   [github.com/settings/installations](https://github.com/settings/installations)
+   → **Claude** → grant access to this repo.
+2. **Open network access.** Cloud environments block unknown domains by
+   default. In [claude.ai/code](https://claude.ai/code), open your
+   environment's settings → Network access → **Custom**, keep the default
+   package list, and add your feed domains plus `api.crossref.org`,
+   `api.unpaywall.org`, `api.zotero.org`, `api.resend.com`,
+   `api.openalex.org`, `export.arxiv.org`, `arxiv.org`, `doi.org`.
 3. **Create the routine.** Fill in the placeholders in
-   `routine_prompt.md`, then either ask Claude Code (`/schedule`, "run
-   this prompt daily at 6am against my repo") or use
-   claude.ai/code/routines. Attach your repo, pick the cheapest model
-   tier, set the cron (times are UTC).
+   `routine_prompt.md`, then ask Claude Code (`/schedule`, *"run this
+   prompt daily at 6am against my repo"*) or use
+   [claude.ai/code/routines](https://claude.ai/code/routines). Cheapest
+   model tier; cron times are UTC.
 4. **Fire a manual test run** and read the push notification: it states
    `Digest EMAILED …`, `Resend FAILED …`, or `Email FAILED …` with the
-   digest preserved. Check the commit, your Zotero inbox, and the email
-   before trusting it.
+   digest preserved. *Check the commit, your Zotero inbox, and the email
+   before trusting it.*
 
 ## 🔑 Keys
 
 All optional except Resend. They go in `.env` locally and in the routine
-prompt (or environment variables) in the cloud; never commit them.
+prompt (or environment variables) in the cloud — **never commit them**.
 
 | Key | Where to get it | Needed for |
 | --- | --- | --- |
-| `RESEND_API_KEY` | free account at [resend.com](https://resend.com) | the emailed digest. Without a verified domain, send from `onboarding@resend.dev`, which only delivers to your own Resend account email |
-| `ZOTERO_API_KEY` | [zotero.org/settings/keys](https://www.zotero.org/settings/keys), write access | filing papers into your library. Leave empty to skip Zotero and curate from the email |
+| `RESEND_API_KEY` | free account at [resend.com](https://resend.com) | **the emailed digest.** Without a verified domain, send from `onboarding@resend.dev` (delivers only to your own Resend account email) |
+| `ZOTERO_API_KEY` | [zotero.org/settings/keys](https://www.zotero.org/settings/keys), write access | filing papers into your library. *Leave empty to skip Zotero and curate from the email* |
 | `OPENALEX_API_KEY` | free from [openalex.org](https://openalex.org) | only if `config.yaml` lists `openalex_sources` (journals with no workable RSS) |
-| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) | local screening runs only; the cloud routine screens natively |
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) | local screening runs only; *the cloud routine screens natively* |
 
 ## 📁 Project structure
 
 Everything sits at the repo root: each file is either the pipeline or a
-file you edit, and `screen.py` finds its siblings by location.
+file you edit.
 
 | File | Purpose |
 | ---- | ------- |
-| `screen.py` | Pipeline: fetch, dedup, screen, log, Zotero. No editing needed |
+| `screen.py` | Pipeline: fetch, dedup, screen, log, Zotero. **No editing needed** |
 | `config.yaml` | All your settings: email, Zotero library, sources, model |
 | `.env.example` | Template for `.env`, where keys live (gitignored) |
 | `source_list.md` | Your feeds, with working URL patterns per publisher |
@@ -154,15 +153,15 @@ file you edit, and `screen.py` finds its siblings by location.
 
 ## 🛠️ Troubleshooting
 
-If the four setup steps above are done, none of these should fire. When
-one does anyway, the fix is a click away:
+If the four setup steps are done, none of these should fire. When one
+does anyway:
 
 <details>
-<summary>Click to expand the failure table</summary>
+<summary><b>Expand the failure table</b></summary>
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| Routine disabled itself, "init failed" | Claude GitHub App can't clone the (private) repo | Grant repo access: github.com → Settings → Applications → Claude → Configure |
+| Routine disabled itself, "init failed" | Claude GitHub App can't clone the (private) repo | Grant repo access at [github.com/settings/installations](https://github.com/settings/installations) |
 | Run reports network/proxy errors | Environment allowlist blocks feeds/APIs | Environment settings → Network access → Custom → add the domains from step 2 |
 | Digest never arrives | Resend missing from the allowlist, unverified from-address, or the free tier's own-address restriction | The push notification states the outcome verbatim; check `api.resend.com` is allowlisted and the from/to pairing matches your Resend tier |
 | Expecting email from a Gmail connector | Google's Gmail connector has no send tool | It can only create drafts; that's why this uses Resend |
@@ -174,18 +173,18 @@ one does anyway, the fix is a click away:
 ## ❓ FAQ
 
 **What does it cost to run?** It draws on your Claude Pro/Max plan's
-included usage: a few minutes of the cheapest model per day, no separate
-bill, no per-token API charges.
+included usage: a few minutes of the cheapest model per day. *No separate
+bill, no per-token API charges.*
 
 **Will it hallucinate papers?** That's what the integrity rules are for:
 every paper must appear verbatim in the fetched feed data, and failures
 get reported instead of papered over. Spot-check a DOI occasionally
-anyway; trust, but verify.
+anyway — trust, but verify.
 
 **Does it get me past paywalls?** No. Cards link the paper's page, plus
-an open-access PDF whenever Unpaywall knows one.
+an open-access PDF whenever [Unpaywall](https://unpaywall.org/) knows one.
 
-**Can I use it without Zotero?** Yes. Leave `ZOTERO_API_KEY` empty and
+**Can I use it without Zotero?** Yes — leave `ZOTERO_API_KEY` empty and
 curate from the email instead.
 
 **Can I run it without the cloud routine?** Yes: `python screen.py`
@@ -194,7 +193,7 @@ cloud routine is just the zero-infrastructure way.
 
 ## 🤝 Contributing
 
-Issues and pull requests welcome, especially working feed patterns for
+Issues and pull requests welcome — especially working feed patterns for
 more publishers and example scope files from other fields.
 
 ## ❤️ Acknowledgements
