@@ -1,5 +1,5 @@
 <div align="center">
-<img src="assets/logo.png" alt="Paper Round logo" width="200">
+<img src="assets/paper-round-logo.png" alt="Paper Round logo" width="200">
 <h1>Paper Round</h1>
 <p>
 <a href="https://github.com/LaineyLouiseWard/paper-round"><img src="https://img.shields.io/badge/status-active-brightgreen" alt="status"></a>
@@ -20,7 +20,7 @@ No server, no GitHub Actions, no LLM API key: a claude.ai Pro/Max
 subscription is the engine. And unlike arXiv recommenders, it covers the
 peer-reviewed journals of your field across publishers.
 
-![Example daily digest](assets/digest-example.png)
+![Example daily digest](assets/digest.png)
 
 ## 🚀 Quick start
 
