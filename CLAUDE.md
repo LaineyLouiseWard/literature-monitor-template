@@ -29,6 +29,22 @@ for the user or to adjust their scope.
 - Papers in digests and logs must come verbatim from fetched feed data.
   Never let a prompt edit soften this.
 
+## Resolving a journal the user names
+
+When the user says "I follow Journal X", find it a working source in this
+order, and never ask the user for an ISSN (look it up yourself):
+
+1. Try the RSS pattern for its publisher (table in source_list.md), add
+   the entry, and verify with `python screen.py --dry-run`.
+2. If the feed returns 0 entries or errors, look up the ISSN:
+   `https://api.crossref.org/journals?query=<name>` (no key needed).
+3. AMS journals: add name-substring and ISSN to `crossref_fallbacks` in
+   config.yaml. Anything else without workable RSS (Elsevier, Nature
+   Portfolio): add to `openalex_sources` and make sure OPENALEX_API_KEY
+   is in .env.
+4. Dry-run again. A journal only counts as added when the dry-run shows
+   entries from it.
+
 ## Setting up for a user
 
 Follow the Start-here prompt in README.md: interview them for journals
