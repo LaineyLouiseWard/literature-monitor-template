@@ -81,7 +81,7 @@ Set up Paper Round (this repo) for me.
 ## ✍️ Writing your scope and rules
 
 `research_scope.md` and `relevance_rules.md` *are* the screening prompt.
-Don't write them from scratch — give Claude Code your research taste:
+Don't write them from scratch. Give Claude Code your research taste:
 
 - **Paste your abstract** (thesis, proposal, or a recent paper), *and*
 - **Export your Zotero library** into the folder (File → Export Library →
@@ -123,7 +123,7 @@ Setting it up is four steps, done once:
 ## 🔑 Keys
 
 All optional except Resend. They go in `.env` locally and in the routine
-prompt (or environment variables) in the cloud — **never commit them**.
+prompt (or environment variables) in the cloud. **Never commit them**.
 
 | Key | Where to get it | Needed for |
 | --- | --- | --- |
@@ -177,13 +177,17 @@ bill, no per-token API charges.*
 
 **Will it hallucinate papers?** No: every paper in the email must appear
 word-for-word in what the feeds returned that morning, and if a source
-breaks the email says which one. Spot-check a DOI occasionally anyway —
+breaks the email says which one. Spot-check a DOI occasionally anyway,
 trust, but verify.
 
 **Does it get me past paywalls?** No. Cards link the paper's page, plus
 an open-access PDF whenever [Unpaywall](https://unpaywall.org/) knows one.
 
-**Can I use it without Zotero?** Yes — leave `ZOTERO_API_KEY` empty and
+**Do I need to install any MCP servers, Zotero plugins, or extensions?**
+No. The pipeline talks to Zotero's web API with your key; nothing gets
+installed in Zotero, your browser, or Claude.
+
+**Can I use it without Zotero?** Yes: leave `ZOTERO_API_KEY` empty and
 curate from the email instead.
 
 **Can I run it without the cloud routine?** Yes: `python screen.py`
@@ -193,7 +197,7 @@ cloud routine is just the zero-infrastructure way.
 ## 🤝 Contributing
 
 Found a bug, or got a feed working for another publisher? Open an issue
-or a PR — all welcome.
+or a PR, all welcome.
 
 ## ❤️ Acknowledgements
 
@@ -205,11 +209,11 @@ Ideas borrowed from tools that solve this for arXiv-centric workflows:
 
 Running on freely provided scholarly infrastructure:
 
-- [Crossref](https://www.crossref.org/) — bibliographic metadata
-- [OpenAlex](https://openalex.org/) — open catalogue of research
-- [Unpaywall](https://unpaywall.org/) — open-access PDF discovery
-- [Zotero](https://www.zotero.org/) — reference management
-- [arXiv](https://arxiv.org/) — preprints
+- [Crossref](https://www.crossref.org/): bibliographic metadata
+- [OpenAlex](https://openalex.org/): open catalogue of research
+- [Unpaywall](https://unpaywall.org/): open-access PDF discovery
+- [Zotero](https://www.zotero.org/): reference management
+- [arXiv](https://arxiv.org/): preprints
 
 ## 📃 Licence
 
