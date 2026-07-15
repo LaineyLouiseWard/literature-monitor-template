@@ -138,16 +138,19 @@ git push origin main
 
 ## 7. Email the digest via Resend
 
-Build the digest as clean simple HTML and save it to /tmp/digest.html.
-Structure, in order:
-1. One-line summary: 'N relevant of X screened across all feeds.'
-2. An h3 'Top picks' with the score-4 papers, then an h3 'Also relevant'
-   with the score-3 papers. Each paper is ONE compact entry: the title as
-   an <a> hyperlink to the paper URL, then em-dash, journal name, em-dash,
-   topic labels; on the next line the 1-2 sentence relevance summary in a
-   <small> or muted style. No tables.
-3. Footer paragraph: git push status, and any step that failed with its
-   exact quoted error (including Zotero add failures).
+Build the digest as clean simple HTML with inline styles and save it to
+/tmp/digest.html. Structure, in order:
+1. Opening line: 'N relevant of X screened across all feeds.'
+2. One card per paper, score-4 papers first. Each card is a div with a
+   light border, rounded corners, padding, and a margin below, containing:
+   - The title in bold, as an <a> link to the paper URL
+   - A muted meta line: journal name &middot; star rating (&#9733;&#9733;&#9733;&#9733; for
+     score 4, &#9733;&#9733;&#9733;&#9734; for score 3) &middot; topic labels
+   - The 1-2 sentence relevance summary as a short paragraph
+   - If the link is a DOI or arXiv URL, a small muted line 'DOI: ...' or
+     'arXiv: ...' with the identifier copied verbatim from the link
+3. Footer paragraph in muted text: git push status, and any step that
+   failed with its exact quoted error (including Zotero add failures).
 
 Then write and run _send.py:
 

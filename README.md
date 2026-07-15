@@ -14,6 +14,20 @@ The digest groups score-4 papers under "Top picks" and score-3 papers under
 labels, and gives the model's one-line reason for the score. The footer
 reports the git push and anything that failed.
 
+## Quick start
+
+1. Click **Use this template** to create your own repo (private is fine)
+2. Edit `source_list.md` (your journals), `research_scope.md` and
+   `relevance_rules.md` (your scope), and `config.yaml` (your settings)
+3. `cp .env.example .env` and fill in the keys you use
+4. `pip install -r requirements.txt && python screen.py --dry-run`
+5. Grant the Claude GitHub App access to your repo, open the cloud
+   environment's network allowlist, and create the routine from
+   `routine_prompt.md`
+6. Fire a manual test run and read the push notification
+
+Each step is explained under [Getting started](#getting-started).
+
 ## Broader context
 
 Built from the working setup behind a PhD literature review in subseasonal
@@ -91,7 +105,7 @@ python screen.py
 The daily automation is a Claude Code cloud routine (claude.ai Pro/Max)
 that runs at whatever time you set, with no server or GitHub Actions of
 your own. Each morning an agent in Anthropic's cloud clones this repo,
-installs the two dependencies, fetches every feed, dedups against
+installs its dependencies, fetches every feed, dedups against
 `seen_papers.txt`, reads your scope and rules, scores the new papers,
 adds the keepers to Zotero, commits the updated logs back to the repo,
 and emails you the digest. You also get a push notification stating the
@@ -185,9 +199,20 @@ siblings by location.
   repo.
 - `ANTHROPIC_API_KEY` is only needed for local runs; the cloud routine
   screens natively.
-- `OPENALEX_API_KEY` (free, from openalex.org) is only needed if you add
-  journals to `OPENALEX_SOURCES` — anonymous OpenAlex access is heavily
-  rate-limited.
+- `OPENALEX_API_KEY` (free, from openalex.org) is only needed if you list
+  journals under `openalex_sources` in `config.yaml`; anonymous OpenAlex
+  access is heavily rate-limited.
+
+## Acknowledgements
+
+The design borrows ideas from [zotero-arxiv-daily](https://github.com/TideDra/zotero-arxiv-daily),
+[ArxivDigest](https://github.com/AutoLLM/ArxivDigest) and
+[paperzorro](https://github.com/Rafael-Silva-Oliveira/paperzorro), which
+solve the same problem for arXiv-centric workflows. The pipeline runs on
+freely provided services: journal RSS feeds, the
+[Crossref](https://www.crossref.org/), [OpenAlex](https://openalex.org/),
+[Unpaywall](https://unpaywall.org/) and [Zotero](https://www.zotero.org/)
+APIs, and [arXiv](https://arxiv.org/).
 
 ## Licence
 
