@@ -21,7 +21,13 @@ your **Zotero** library with full metadata and an open-access PDF link.
 subscription is the engine. Adapted from the workflow I built for my own
 PhD ([Lainey Ward](https://github.com/LaineyLouiseWard)).
 
+## 📬 The morning email
+
 ![Example daily digest](assets/email.png)
+
+Titles link to the paper on the journal's site, the PDF button appears
+whenever an open-access copy exists, and the strongest matches come
+first.
 
 ## 🚀 Start here
 
@@ -30,25 +36,35 @@ open your new repo in Claude Code, and paste this one prompt. *Claude
 does the setup for you:*
 
 ```text
-Set up Paper Round (this repo) for me.
-1. Read README.md, source_list.md, research_scope.md, relevance_rules.md,
-   config.yaml and .env.example.
-2. Interview me: which journals I follow (build source_list.md entries
-   using the publisher patterns in that file, with Crossref or OpenAlex
-   fallbacks where RSS is blocked), my email address, and my Zotero
-   library details if I use it.
-3. Ask me to paste my thesis or proposal abstract, and to export my
-   Zotero library into this folder (File > Export Library > CSV) if I
-   have one. Draft research_scope.md and relevance_rules.md from both,
+You are setting up Paper Round (this repo) for me. Read CLAUDE.md and
+README.md first, then the files you will edit: source_list.md,
+research_scope.md, relevance_rules.md, config.yaml, .env.example.
+
+1. Interview me, one topic at a time:
+   - Which journals I follow. Resolve each to a working source yourself
+     using the "Resolving a journal" recipe in CLAUDE.md; never ask me
+     for ISSNs or feed URLs.
+   - My research. Offer me the choice: paste an abstract, point you at
+     a thesis chapter, proposal, or paper in this folder for you to
+     read, or both. Also ask for a Zotero library export dropped in
+     this folder (File > Export Library > CSV) if I use Zotero.
+   - My email address, and my Zotero library ID and collection if I
+     want papers filed automatically.
+2. Draft research_scope.md and relevance_rules.md from what I gave you,
    keeping the scaffolds' structure. Fill in config.yaml.
-4. Help me create .env from .env.example, telling me exactly where each
-   key comes from (the Keys table in README.md).
-5. Run: pip install -r requirements.txt && python screen.py --dry-run
+3. Help me create .env from .env.example. For each key, give me the
+   exact link from the Keys table in README.md and wait while I create
+   it.
+4. Run: pip install -r requirements.txt && python screen.py --dry-run
    and fix anything that fails.
-6. Fill the placeholders in routine_prompt.md, then walk me through the
+5. Fill the placeholders in routine_prompt.md, then walk me through the
    cloud steps from the README (GitHub App access, network allowlist,
-   creating the routine with /schedule) one at a time, waiting for me to
-   confirm each before moving on.
+   creating the routine with /schedule) one at a time, waiting for me
+   to confirm each before moving on.
+
+Rules: edit config.yaml and the markdown files, never screen.py. Keep
+the source_list.md feed-entry format exactly. You are done when the
+dry-run shows entries from every journal and the routine exists.
 ```
 
 <details>
