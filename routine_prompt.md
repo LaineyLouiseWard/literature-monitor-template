@@ -1,8 +1,8 @@
 # Cloud routine prompt
 
 This is the prompt for the scheduled cloud agent. Replace the placeholders —
-`<YOUR_EMAIL>`, `<YOUR_ZOTERO_API_KEY>`, `<YOUR_RESEND_API_KEY>`,
-`<YOUR_FROM_ADDRESS>` — then paste the whole fenced block below as the
+`<YOUR_EMAIL>`, `<YOUR_ZOTERO_API_KEY>`, `<YOUR_RESEND_API_KEY>` — then
+set the email block in config.yaml (from, to, greeting_name) and paste the whole fenced block below as the
 routine's task. See the README for how to create the routine and configure
 the cloud environment.
 
