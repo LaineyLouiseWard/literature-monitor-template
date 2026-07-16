@@ -152,7 +152,7 @@ variables) in the cloud. **Never commit them**.
 | Key | Where to get it | Needed for |
 | --- | --- | --- |
 | `RESEND_API_KEY` | free account at [resend.com](https://resend.com) | **the emailed digest.** Without a verified domain, send from `onboarding@resend.dev` (delivers only to your own Resend account email) |
-| `ZOTERO_API_KEY` | free at [zotero.org/settings/keys](https://www.zotero.org/settings/keys) (tick write access) | filing papers into your library. *Leave empty to skip Zotero and curate from the email* |
+| `ZOTERO_API_KEY` | free at [zotero.org/settings/keys](https://www.zotero.org/settings/keys) (tick write access) | adding papers to your Zotero library. *Leave empty to skip Zotero and curate from the email* |
 | `OPENALEX_API_KEY` | free from [openalex.org](https://openalex.org) | only if `config.yaml` lists `openalex_sources` (journals with no workable RSS) |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) (pay per use) | only for running `screen.py` on your own computer. *The daily cloud run already includes Claude, so it never needs this* |
 
