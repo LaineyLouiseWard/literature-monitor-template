@@ -68,6 +68,11 @@ CROSSREF_FALLBACKS = {k: str(v) for k, v in (_cfg.get("crossref_fallbacks") or {
 OPENALEX_SOURCES = {k: str(v) for k, v in (_cfg.get("openalex_sources") or {}).items()}
 OPENALEX_DAYS = _cfg.get("openalex_days", 14)
 MODEL = _cfg.get("model", "claude-haiku-4-5-20251001")
+_email = _cfg.get("email") or {}
+DIGEST_FROM = _email.get("from", "Literature Monitor <onboarding@resend.dev>")
+DIGEST_TO = _email.get("to", CONTACT_EMAIL)
+DIGEST_GREETING = _email.get("greeting_name", "there")
+DIGEST_FEEDS_LABEL = _email.get("feeds_label", "all feeds")
 
 MAX_BATCH = 50  # max papers per API call
 CROSSREF_ROWS = 30  # max papers to fetch per Crossref query
@@ -683,6 +688,109 @@ def add_to_zotero(papers: list[dict]) -> int:
             print(f"  ! Zotero failed for '{title[:50]}...': {e}")
 
     return added
+
+
+
+
+# ---------------------------------------------------------------------------
+# 7. Render and send the digest email (deterministic — the model never
+#    touches layout; Gmail strips <style> blocks so every style is inline)
+# ---------------------------------------------------------------------------
+def paper_id_label(link: str) -> str:
+    """Bare DOI or 'arXiv:NNNN.NNNNN' for display, or '' if neither."""
+    pid = extract_paper_id(link)
+    if not pid:
+        return ""
+    kind, val = pid.split(":", 1)
+    return val if kind == "doi" else f"arXiv:{val}"
+
+
+def build_digest_html(papers: list[dict], n_screened: int,
+                      failures: list = None) -> str:
+    """Render the digest from scored papers. Cards for score >= 3, best
+    first, capped at 25. Looks up open-access PDFs via Unpaywall."""
+    from html import escape
+
+    relevant = sorted((p for p in papers if p.get("score", 0) >= 3),
+                      key=lambda p: -p.get("score", 0))
+    shown, extra = relevant[:25], max(0, len(relevant) - 25)
+
+    parts = ['<div style="max-width:640px;font-family:Arial,Helvetica,sans-serif;">']
+    if relevant:
+        parts.append(
+            f'<p style="font-size:14px;color:#24272b;">{len(relevant)} relevant '
+            f'of {n_screened} screened across {DIGEST_FEEDS_LABEL}.</p>')
+    else:
+        parts.append(
+            f'<p style="font-size:14px;color:#24272b;">No new papers matched '
+            f'today. {n_screened} screened across {DIGEST_FEEDS_LABEL}.</p>')
+
+    for p in shown:
+        link = p.get("link", "")
+        stars = "&#9733;&#9733;&#9733;&#9733;" if p.get("score", 0) >= 4 else "&#9733;&#9733;&#9733;&#9734;"
+        doi = extract_doi(link)
+        pdf = get_unpaywall_pdf_url(doi) if doi else None
+        pid = paper_id_label(link)
+
+        card = ['<div style="border:1px solid #e3e6e9;border-radius:8px;padding:14px 16px;margin-bottom:12px;">']
+        card.append(f'<a href="{escape(link, quote=True)}" style="color:#1155cc;'
+                    f'text-decoration:none;font-weight:bold;font-size:15px;">'
+                    f'{escape(p.get("title", ""))}</a>')
+        if p.get("authors"):
+            card.append(f'<div style="color:#6b7178;font-size:12px;margin-top:5px;">'
+                        f'{escape(p["authors"])}</div>')
+        card.append(f'<div style="color:#6b7178;font-size:12.5px;margin-top:4px;">'
+                    f'{escape(p.get("source", ""))} &middot; '
+                    f'<span style="color:#e8a13c;">{stars}</span> &middot; '
+                    f'{escape(p.get("labels", ""))}</div>')
+        if p.get("summary"):
+            card.append(f'<p style="font-size:13px;color:#3d4249;margin:8px 0 10px;'
+                        f'line-height:1.45;">{escape(p["summary"])}</p>')
+        row = (f'<a href="{escape(link, quote=True)}" style="background:#e8734a;'
+               f'color:#ffffff;border-radius:6px;padding:4px 13px;font-size:12px;'
+               f'font-weight:bold;text-decoration:none;display:inline-block;">Paper</a>')
+        if pdf:
+            row += (f'&nbsp;<a href="{escape(pdf, quote=True)}" style="background:#2b3a55;'
+                    f'color:#ffffff;border-radius:6px;padding:4px 13px;font-size:12px;'
+                    f'font-weight:bold;text-decoration:none;display:inline-block;">PDF</a>')
+        if pid:
+            row += f'&nbsp;<span style="color:#9aa0a6;font-size:12px;">{escape(pid)}</span>'
+        card.append(row)
+        card.append('</div>')
+        parts.append("".join(card))
+
+    if extra:
+        parts.append(f'<p style="font-size:12.5px;color:#7a8087;">Plus {extra} '
+                     f'more in paper_log.csv.</p>')
+    if failures:
+        msgs = "<br>".join(escape(f) for f in failures)
+        parts.append(f'<p style="font-size:12.5px;color:#7a8087;border-top:'
+                     f'1px solid #eceef0;padding-top:10px;">{msgs}</p>')
+    parts.append('</div>')
+    return "\n".join(parts)
+
+
+def send_digest(papers: list[dict], n_screened: int,
+                failures: list = None) -> str:
+    """Build the digest and send it via Resend. Returns the API response."""
+    n = len([p for p in papers if p.get("score", 0) >= 3])
+    if failures:
+        subject = f"Morning {DIGEST_GREETING}! The paper round hit a snag"
+    elif n == 0:
+        subject = f"Morning {DIGEST_GREETING}! Nothing new in today's round"
+    else:
+        plural = "s" if n != 1 else ""
+        subject = f"Morning {DIGEST_GREETING}! {n} paper{plural} in today's round"
+
+    resp = requests.post(
+        "https://api.resend.com/emails",
+        headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}",
+                 "Content-Type": "application/json"},
+        json={"from": DIGEST_FROM, "to": [DIGEST_TO], "subject": subject,
+              "html": build_digest_html(papers, n_screened, failures)},
+        timeout=30,
+    )
+    return f"{resp.status_code} {resp.text[:200]}"
 
 
 # ---------------------------------------------------------------------------

@@ -35,3 +35,12 @@ openalex_days: 14
 
 # Screening model for local runs (the cloud routine screens natively)
 model: claude-haiku-4-5-20251001
+
+# The digest email. Without a verified Resend domain, keep the from
+# address as onboarding@resend.dev and set to: to the email you signed
+# up to Resend with (the free tier only delivers to your own address).
+email:
+  from: "Literature Monitor <onboarding@resend.dev>"
+  to: you@example.edu
+  greeting_name: there
+  feeds_label: all feeds

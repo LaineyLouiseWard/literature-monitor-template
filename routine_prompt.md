@@ -92,7 +92,7 @@ this step.
 ## 4. Add to Zotero (score >= 3 only)
 
 Write the scored relevant papers to /tmp/scored.json as a JSON list of
-objects with keys: title, link, source, score, summary, labels (all values
+objects with keys: title, link, source, authors, score, summary, labels (all values
 copied verbatim from new_papers.json plus your scores). Then run:
 
 ```python
@@ -136,58 +136,25 @@ git push origin main
 
 (Replace <N> with actual count of relevant papers.)
 
-## 7. Email the digest via Resend
+## 7. Email the digest
 
-Gmail strips <style> blocks, so every style must be inline. Build
-/tmp/digest.html by copying the templates below EXACTLY. Fill only the
-UPPERCASE parts, change nothing else.
-
-Open with (once):
-
-```html
-<div style="max-width:640px;font-family:Arial,Helvetica,sans-serif;">
-<p style="font-size:14px;color:#24272b;">N relevant of X screened across all feeds.</p>
-```
-
-Then one card per paper, score-4 papers first. AUTHORS comes from the
-paper's authors field in new_papers.json; omit that div when empty. Omit
-the PDF anchor when the Zotero step found no open-access PDF. ID is the
-bare DOI or arXiv id from the link; omit the span when there is none.
-
-```html
-<div style="border:1px solid #e3e6e9;border-radius:8px;padding:14px 16px;margin-bottom:12px;">
-<a href="PAPER_URL" style="color:#1155cc;text-decoration:none;font-weight:bold;font-size:15px;">TITLE</a>
-<div style="color:#6b7178;font-size:12px;margin-top:5px;">AUTHORS</div>
-<div style="color:#6b7178;font-size:12.5px;margin-top:4px;">JOURNAL &middot; <span style="color:#e8a13c;">STARS</span> &middot; LABELS</div>
-<p style="font-size:13px;color:#3d4249;margin:8px 0 10px;line-height:1.45;">SUMMARY</p>
-<a href="PAPER_URL" style="background:#e8734a;color:#ffffff;border-radius:6px;padding:4px 13px;font-size:12px;font-weight:bold;text-decoration:none;display:inline-block;">Paper</a>&nbsp;<a href="PDF_URL" style="background:#2b3a55;color:#ffffff;border-radius:6px;padding:4px 13px;font-size:12px;font-weight:bold;text-decoration:none;display:inline-block;">PDF</a>&nbsp;<span style="color:#9aa0a6;font-size:12px;">ID</span>
-</div>
-```
-
-Close with (once): </div>
-
-- STARS: &#9733;&#9733;&#9733;&#9733; for score 4, &#9733;&#9733;&#9733;&#9734; for score 3
-- If more than 25 papers are relevant, include the top 25 by score and
-  add one muted <p> noting how many more are in paper_log.csv
-- Only append a failure paragraph (muted style) if something failed:
-  name the step and quote the exact error
-
-Then write and run _send.py:
+The email is rendered and sent by code, not by you. Run:
 
 ```python
-import requests, os
-html = open('/tmp/digest.html').read()
-SUBJECT = 'Morning <YOUR_NAME>! N papers in today\'s round'  # N>0. For zero: 'Morning <YOUR_NAME>! Nothing new in today\'s round'. On failure: 'Morning <YOUR_NAME>! The paper round hit a snag'
-r = requests.post('https://api.resend.com/emails',
-    headers={'Authorization': f"Bearer {os.environ['RESEND_API_KEY']}", 'Content-Type': 'application/json'},
-    json={'from': 'Literature Monitor <YOUR_FROM_ADDRESS>',
-          'to': ['<YOUR_EMAIL>'],
-          'subject': SUBJECT,
-          'html': html})
-print(r.status_code, r.text)
+import sys, json
+sys.path.insert(0, '.')
+import screen
+try:
+    papers = json.load(open('/tmp/scored.json'))
+except FileNotFoundError:
+    papers = []
+failures = []  # add the exact quoted error string for any step that failed
+print(screen.send_digest(papers, n_screened=TOTAL_SCREENED, failures=failures))
 ```
 
-Delete _send.py afterward. A 200 response with an id means sent.
+Replace TOTAL_SCREENED with the number of papers screened this run (0 if
+the fetch failed) and put any failure messages in the list. A 200
+response with an id means sent.
 
 If Resend returns an error and a Gmail connector is attached, fall back to
 creating a Gmail draft with the same content, and report the Resend error.
